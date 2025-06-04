@@ -1,0 +1,99 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: locust_mongodb
+    restart: always
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo_admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - locust_mongodb_data:/data/db
+    networks:
+      - locust_network
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: locust_redis
+    restart: always
+    ports:
+      - "6380:6379"
+    volumes:
+      - locust_redis_data:/data
+    networks:
+      - locust_network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: locust_api
+    restart: always
+    ports:
+      - "8001:8000"
+    environment:
+      - MONGO_URL=mongodb://mongo_admin:password@mongodb:27017
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_NAME=locust_test_db
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - locust_network
+
+  locust-master:
+    build:
+      context: .
+      dockerfile: Dockerfile.locust
+    container_name: locust_master
+    ports:
+      - "8089:8089"
+    command: >
+      locust 
+      --master 
+      --host=http://api:8000 
+      --web-host=0.0.0.0 
+      --web-port=8089
+    depends_on:
+      - api
+    networks:
+      - locust_network
+
+  locust-worker1:
+    build:
+      context: .
+      dockerfile: Dockerfile.locust
+    container_name: locust_worker1
+    command: >
+      locust 
+      --worker 
+      --master-host=locust-master 
+      --host=http://api:8000
+    depends_on:
+      - locust-master
+    networks:
+      - locust_network
+
+  locust-worker2:
+    build:
+      context: .
+      dockerfile: Dockerfile.locust
+    container_name: locust_worker2
+    command: >
+      locust 
+      --worker 
+      --master-host=locust-master 
+      --host=http://api:8000
+    depends_on:
+      - locust-master
+    networks:
+      - locust_network
+
+volumes:
+  locust_mongodb_data:
+  locust_redis_data:
+
+networks:
+  locust_network:
+    driver: bridge

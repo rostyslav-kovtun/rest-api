@@ -1,0 +1,523 @@
+openapi: 3.1.0
+info:
+  title: "Бібліотека API - Mock Version"
+  description: "Mock API"
+  version: "9.0.0"
+
+servers:
+  - url: http://localhost:4010
+    description: PRISM Mock Server
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - authentication
+      summary: Register User
+      operationId: register_user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+            examples:
+              example1:
+                summary: Приклад реєстрації
+                value:
+                  username: "testuser"
+                  email: "test@example.com"
+                  password: "123456"
+      responses:
+        '201':
+          description: Користувач створений успішно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+              examples:
+                example1:
+                  summary: Успішна реєстрація
+                  value:
+                    id: "65f1a2b3c4d5e6f7890abcde"
+                    username: "testuser"
+                    email: "test@example.com"
+                    is_active: true
+                    created_at: "2025-06-04T10:30:00Z"
+        '400':
+          description: Помилка валідації
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+              examples:
+                example1:
+                  summary: Користувач вже існує
+                  value:
+                    detail: "Користувач з таким username або email вже існує"
+
+  /auth/login:
+    post:
+      tags:
+        - authentication
+      summary: Login User
+      operationId: login_user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+            examples:
+              example1:
+                summary: Приклад входу
+                value:
+                  username: "testuser"
+                  password: "123456"
+      responses:
+        '200':
+          description: Успішний вхід
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+              examples:
+                example1:
+                  summary: Успішний вхід
+                  value:
+                    access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImV4cCI6MTY5ODc2NTQzMCwidHlwZSI6ImFjY2VzcyJ9.mock_access_token"
+                    refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImV4cCI6MTY5ODc2NTQzMCwidHlwZSI6InJlZnJlc2gifQ.mock_refresh_token"
+                    token_type: "bearer"
+        '401':
+          description: Неправильні дані для входу
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+              examples:
+                example1:
+                  summary: Неправильний пароль
+                  value:
+                    detail: "Неправильний username або пароль"
+
+  /auth/refresh:
+    post:
+      tags:
+        - authentication
+      summary: Refresh Token
+      operationId: refresh_token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+            examples:
+              example1:
+                summary: Оновлення токена
+                value:
+                  refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImV4cCI6MTY5ODc2NTQzMCwidHlwZSI6InJlZnJlc2gifQ.mock_refresh_token"
+      responses:
+        '200':
+          description: Токен оновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+              examples:
+                example1:
+                  summary: Новий токен
+                  value:
+                    access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImV4cCI6MTY5ODc2NTQzMCwidHlwZSI6ImFjY2VzcyJ9.new_mock_access_token"
+                    refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImV4cCI6MTY5ODc2NTQzMCwidHlwZSI6InJlZnJlc2gifQ.mock_refresh_token"
+                    token_type: "bearer"
+
+  /auth/me:
+    get:
+      tags:
+        - authentication
+      summary: Get Current User Info
+      operationId: get_current_user_info
+      security:
+        - HTTPBearer: []
+      responses:
+        '200':
+          description: Інформація про користувача
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+              examples:
+                example1:
+                  summary: Поточний користувач
+                  value:
+                    id: "65f1a2b3c4d5e6f7890abcde"
+                    username: "testuser"
+                    email: "test@example.com"
+                    is_active: true
+                    created_at: "2025-06-04T10:30:00Z"
+
+  /api/v1/books/public:
+    get:
+      tags:
+        - books
+      summary: Get All Books Public
+      operationId: get_all_books_public
+      responses:
+        '200':
+          description: Список всіх книг (публічний доступ)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  books:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Book'
+                  user_type:
+                    type: string
+              examples:
+                example1:
+                  summary: Список книг для анонімного користувача
+                  value:
+                    count: 3
+                    user_type: "anonymous"
+                    books:
+                      - _id: "65f1a2b3c4d5e6f7890abc01"
+                        title: "Kobzar"
+                        author: "Taras Shevchenko"
+                        year_published: 1840
+                        genre: "poetry"
+                      - _id: "65f1a2b3c4d5e6f7890abc02"
+                        title: "1984"
+                        author: "George Orwell"
+                        year_published: 1949
+                        genre: "dystopian"
+                      - _id: "65f1a2b3c4d5e6f7890abc03"
+                        title: "Norwegian Wood"
+                        author: "Haruki Murakami"
+                        year_published: 1987
+                        genre: "fiction"
+
+  /api/v1/books:
+    get:
+      tags:
+        - books
+      summary: Get All Books
+      operationId: get_all_books
+      security:
+        - HTTPBearer: []
+      responses:
+        '200':
+          description: Список всіх книг (потрібна автентифікація)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  books:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Book'
+                  user:
+                    type: string
+              examples:
+                example1:
+                  summary: Список книг для авторизованого користувача
+                  value:
+                    count: 3
+                    user: "testuser"
+                    books:
+                      - _id: "65f1a2b3c4d5e6f7890abc01"
+                        title: "Kobzar"
+                        author: "Taras Shevchenko"
+                        year_published: 1840
+                        genre: "poetry"
+                      - _id: "65f1a2b3c4d5e6f7890abc02"
+                        title: "1984"
+                        author: "George Orwell"
+                        year_published: 1949
+                        genre: "dystopian"
+                      - _id: "65f1a2b3c4d5e6f7890abc03"
+                        title: "Norwegian Wood"
+                        author: "Haruki Murakami"
+                        year_published: 1987
+                        genre: "fiction"
+    post:
+      tags:
+        - books
+      summary: Create Book
+      operationId: create_book
+      security:
+        - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookCreate'
+            examples:
+              example1:
+                summary: Створення нової книги
+                value:
+                  title: "Тіні забутих предків"
+                  author: "Михайло Коцюбинський"
+                  year_published: 1913
+                  genre: "fiction"
+      responses:
+        '201':
+          description: Книга створена успішно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+              examples:
+                example1:
+                  summary: Створена книга
+                  value:
+                    _id: "65f1a2b3c4d5e6f7890abc04"
+                    title: "Тіні забутих предків"
+                    author: "Михайло Коцюбинський"
+                    year_published: 1913
+                    genre: "fiction"
+
+  /api/v1/books/{book_id}:
+    get:
+      tags:
+        - books
+      summary: Get Book
+      operationId: get_book
+      security:
+        - HTTPBearer: []
+      parameters:
+        - name: book_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "65f1a2b3c4d5e6f7890abc01"
+      responses:
+        '200':
+          description: Деталі книги
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+              examples:
+                example1:
+                  summary: Деталі книги
+                  value:
+                    _id: "65f1a2b3c4d5e6f7890abc01"
+                    title: "Kobzar"
+                    author: "Taras Shevchenko"
+                    year_published: 1840
+                    genre: "poetry"
+        '404':
+          description: Книга не знайдена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+              examples:
+                example1:
+                  summary: Книга не знайдена
+                  value:
+                    detail: "Книгу з ID 65f1a2b3c4d5e6f7890abc99 не знайдено"
+    delete:
+      tags:
+        - books
+      summary: Delete Book
+      operationId: delete_book
+      security:
+        - HTTPBearer: []
+      parameters:
+        - name: book_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "65f1a2b3c4d5e6f7890abc01"
+      responses:
+        '200':
+          description: Книга видалена успішно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              examples:
+                example1:
+                  summary: Успішне видалення
+                  value:
+                    message: "Книгу 'Kobzar' видалено користувачем testuser"
+
+components:
+  schemas:
+    Book:
+      type: object
+      required:
+        - title
+        - author
+        - year_published
+        - genre
+      properties:
+        _id:
+          type: string
+          example: "65f1a2b3c4d5e6f7890abc01"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 150
+          example: "Kobzar"
+        author:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "Taras Shevchenko"
+        year_published:
+          type: integer
+          minimum: 1000
+          maximum: 2025
+          example: 1840
+        genre:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: "poetry"
+
+    BookCreate:
+      type: object
+      required:
+        - title
+        - author
+        - year_published
+        - genre
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 150
+          example: "Тіні забутих предків"
+        author:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "Михайло Коцюбинський"
+        year_published:
+          type: integer
+          minimum: 1000
+          maximum: 2025
+          example: 1913
+        genre:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: "fiction"
+
+    UserCreate:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          example: "testuser"
+        email:
+          type: string
+          format: email
+          example: "test@example.com"
+        password:
+          type: string
+          minLength: 6
+          maxLength: 100
+          example: "123456"
+
+    UserLogin:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: "testuser"
+        password:
+          type: string
+          example: "123456"
+
+    UserResponse:
+      type: object
+      required:
+        - id
+        - username
+        - email
+        - is_active
+        - created_at
+      properties:
+        id:
+          type: string
+          example: "65f1a2b3c4d5e6f7890abcde"
+        username:
+          type: string
+          example: "testuser"
+        email:
+          type: string
+          example: "test@example.com"
+        is_active:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-06-04T10:30:00Z"
+
+    Token:
+      type: object
+      required:
+        - access_token
+        - refresh_token
+      properties:
+        access_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImV4cCI6MTY5ODc2NTQzMCwidHlwZSI6ImFjY2VzcyJ9.mock_access_token"
+        refresh_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImV4cCI6MTY5ODc2NTQzMCwidHlwZSI6InJlZnJlc2gifQ.mock_refresh_token"
+        token_type:
+          type: string
+          default: "bearer"
+          example: "bearer"
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImV4cCI6MTY5ODc2NTQzMCwidHlwZSI6InJlZnJlc2gifQ.mock_refresh_token"
+
+  securitySchemes:
+    HTTPBearer:
+      type: http
+      scheme: bearer

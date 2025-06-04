@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  postgres_db:
+    image: postgres:15-alpine
+    container_name: library_postgres
+    environment:
+      POSTGRES_DB: library_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d library_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - library_network
+
+  flask_app:
+    build: .
+    container_name: library_flask_app
+    environment:
+      DB_HOST: postgres_db
+      DB_PORT: 5432
+      DB_NAME: library_db
+      DB_USER: postgres
+      DB_PASSWORD: password123
+      FLASK_ENV: development
+      FLASK_DEBUG: "true"
+    ports:
+      - "5050:5050"
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    networks:
+      - library_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  library_network:
+    driver: bridge
